@@ -5,5 +5,6 @@
 
 void blink(void *pdata);
 void serial(void *pdata);
+void ir_demo(void *pdata);
 
 #endif
