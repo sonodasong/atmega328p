@@ -110,6 +110,9 @@
     <Folder Include="src\ucos-ii" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\library\adc.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\library\ir.c">
       <SubType>compile</SubType>
     </Compile>

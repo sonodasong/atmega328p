@@ -22,13 +22,14 @@ int main(void)
 	tickInit();
 
 	enablePullup();
+	adcInit();
 	usart0Init();
 
 	ledInit();
 	ir_init();
 
-	OSTaskCreate(ir_demo, (void *)0, &stack0[255], 0);
-	// OSTaskCreate(blink, (void *)0, &stack1[127], 1);
+	OSTaskCreate(auto_ac, (void *)0, &stack0[255], 0);
+	// OSTaskCreate(auto_ac_debug, (void *)0, &stack1[127], 1);
 
 	OSStart();
 

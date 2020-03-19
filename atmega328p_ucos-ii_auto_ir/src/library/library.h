@@ -3,6 +3,7 @@
 
 #include "define.h"
 #include "util.h"
+#include "adc.h"
 #include "usart0.h"
 #include "ir.h"
 
