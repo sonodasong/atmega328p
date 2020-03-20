@@ -1,6 +1,6 @@
 #include "user.h"
 
-static OS_STK stack0[256];
+static OS_STK stack0[512];
 // static OS_STK stack1[128];
 
 static void tickInit( void )
@@ -28,7 +28,7 @@ int main(void)
 	ledInit();
 	ir_init();
 
-	OSTaskCreate(auto_ac, (void *)0, &stack0[255], 0);
+	OSTaskCreate(auto_ac, (void *)0, &stack0[511], 0);
 	// OSTaskCreate(auto_ac_debug, (void *)0, &stack1[127], 1);
 
 	OSStart();
