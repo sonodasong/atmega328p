@@ -1,15 +1,17 @@
 #include "task.h"
 
-#define TEMP_LOW		54
-#define TEMP_HIGH		55
-#define TIME_DRY		300
-#define AC_OFF			0x00
-#define AC_DRY			0x01
-#define AC_COOL			0x02
+#define TEMP_DEFAULT		26
+#define TEMP_SCALE			131
+#define TIME_DRY			600
+#define AC_OFF				0x00
+#define AC_DRY				0x01
+#define AC_COOL				0x02
 
 static void ac_mode(uint8 mode);
 
-volatile static uint16 temp;
+volatile static int16 temp_high = (TEMP_DEFAULT + 1) * TEMP_SCALE;
+volatile static int16 temp_low = (TEMP_DEFAULT - 1) * TEMP_SCALE;
+volatile static int16 temperature;
 
 void blink(void *pdata)
 {
@@ -37,10 +39,11 @@ void auto_ac(void *pdata)
 {
 	uint8 state;
 	uint16 dry;
+	int16 temp;
 
 	(void)pdata;
-	temp = adcRead();
-	if (temp < TEMP_LOW) {
+	temperature = (int16) adcRead();
+	if (temperature < temp_low) {
 		state = AC_OFF;
 		ac_mode(AC_OFF);
 	} else {
@@ -49,16 +52,17 @@ void auto_ac(void *pdata)
 		dry = 0;
 	}
 	while (1) {
-		temp = adcRead();
-		usart0Printf("%d %d\r\n", temp, state);
+		temp = (int16) adcRead();
+		temperature += (temp - temperature) / 64;
+		// usart0Printf("%d %d %d\r\n", temperature / TEMP_SCALE, temp / TEMP_SCALE, state);
 		if (state == AC_OFF) {
-			if (temp > TEMP_HIGH) {
+			if (temperature > temp_high) {
 				state = AC_DRY;
 				ac_mode(AC_DRY);
 				dry = 0;
 			}
 		} else if (state == AC_DRY) {
-			if (temp < TEMP_LOW) {
+			if (temperature < temp_low) {
 				state = AC_OFF;
 				ac_mode(AC_OFF);
 			} else {
@@ -69,7 +73,7 @@ void auto_ac(void *pdata)
 				}
 			}
 		} else if (state == AC_COOL) {
-			if (temp < TEMP_LOW) {
+			if (temperature < temp_low) {
 				state = AC_OFF;
 				ac_mode(AC_OFF);
 			}
@@ -81,12 +85,15 @@ void auto_ac(void *pdata)
 void auto_ac_debug(void *pdata)
 {
 	char *str;
+	int16 temp;
 
 	(void)pdata;
 	while (1) {
 		usart0Read(&str);
 		temp = (str[0] - '0') * 10 + str[1] - '0';
-		usart0Printf("%d\r\n", temp);
+		temp_high = (temp + 1) * TEMP_SCALE;
+		temp_low = (temp - 1) * TEMP_SCALE;
+		usart0Printf("Temperature set at %d\r\n", temp);
 	}
 }
 
@@ -129,7 +136,5 @@ static void ac_mode(uint8 mode)
 	}
 	OSTimeDly(1);
 	ir_send(code, 14);
-	// OSTimeDly(1);
-	// ir_send(code, 14);
-	usart0Printf("Enter AC %s Mode\r\n", msg);
+	// usart0Printf("Enter AC %s Mode\r\n", msg);
 }

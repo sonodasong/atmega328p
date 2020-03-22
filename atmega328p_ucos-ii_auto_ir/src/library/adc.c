@@ -2,7 +2,7 @@
 
 void adcInit(void)
 {
-	ADMUX = 0x40;
+	ADMUX = 0x60;
 	ADCSRA = 0x87;
 	ADCSRB = 0x00;
 	DIDR0 = 0x01;

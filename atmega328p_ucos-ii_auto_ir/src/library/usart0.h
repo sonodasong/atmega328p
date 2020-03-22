@@ -19,7 +19,7 @@ INT8U usart0Read(char **str);
 INT8U usart0Print(char *str);
 #if USART0_ENABLE_PRINTF
 /* buffer size is 2 ^ USART0_TX_SIZE */
-#define USART0_TX_SIZE			4
+#define USART0_TX_SIZE			5
 void usart0Printf(char *fmt, ...);
 #endif
 
