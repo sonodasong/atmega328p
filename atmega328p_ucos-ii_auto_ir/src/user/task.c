@@ -38,6 +38,7 @@ void serial(void *pdata)
 void auto_ac(void *pdata)
 {
 	uint8 state;
+	BOOLEAN cool;
 	uint16 dry;
 	int16 temp;
 
@@ -50,6 +51,7 @@ void auto_ac(void *pdata)
 		state = AC_DRY;
 		ac_mode(AC_DRY);
 		dry = 0;
+		cool = TRUE;
 	}
 	while (1) {
 		temp = (int16) adcRead();
@@ -57,9 +59,16 @@ void auto_ac(void *pdata)
 		// usart0Printf("%d %d %d\r\n", temperature / TEMP_SCALE, temp / TEMP_SCALE, state);
 		if (state == AC_OFF) {
 			if (temperature > temp_high) {
-				state = AC_DRY;
-				ac_mode(AC_DRY);
-				dry = 0;
+				if (cool) {
+					state = AC_COOL;
+					ac_mode(AC_COOL);
+					cool = FALSE;
+				} else {
+					state = AC_DRY;
+					ac_mode(AC_DRY);
+					dry = 0;
+					cool = TRUE;
+				}
 			}
 		} else if (state == AC_DRY) {
 			if (temperature < temp_low) {
@@ -136,5 +145,5 @@ static void ac_mode(uint8 mode)
 	}
 	OSTimeDly(1);
 	ir_send(code, 14);
-	// usart0Printf("Enter AC %s Mode\r\n", msg);
+	usart0Printf("Enter AC %s Mode\r\n", msg);
 }
