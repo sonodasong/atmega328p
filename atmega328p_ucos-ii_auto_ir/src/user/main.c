@@ -26,10 +26,10 @@ int main(void)
 	usart0Init();
 
 	ledInit();
-	ir_init();
+	irInit();
 
-	OSTaskCreate(auto_ac, (void *)0, &stack0[511], 0);
-	OSTaskCreate(auto_ac_debug, (void *)0, &stack1[127], 1);
+	OSTaskCreate(autoAc, (void *)0, &stack0[511], 0);
+	OSTaskCreate(autoAcInterface, (void *)0, &stack1[127], 1);
 
 	OSStart();
 

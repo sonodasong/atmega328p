@@ -7,11 +7,11 @@
 #define AC_DRY				0x01
 #define AC_COOL				0x02
 
-static void ac_mode(uint8 mode);
+static void acMode(uint8 mode);
 
-volatile static int16 temp_high = (TEMP_DEFAULT + 1) * TEMP_SCALE;
-volatile static int16 temp_low = (TEMP_DEFAULT - 1) * TEMP_SCALE;
-volatile static int16 temperature;
+volatile static int16 tempHigh = (TEMP_DEFAULT + 1) * TEMP_SCALE;
+volatile static int16 tempLow = (TEMP_DEFAULT - 1) * TEMP_SCALE;
+volatile static uint8 dryPeriod = 4;
 
 void blink(void *pdata)
 {
@@ -35,63 +35,64 @@ void serial(void *pdata)
 	}
 }
 
-void auto_ac(void *pdata)
+void autoAc(void *pdata)
 {
 	uint8 state;
-	BOOLEAN cool;
-	uint16 dry;
+	uint8 dryCnt;
+	uint16 dryTime;
+	int16 temperature;
 	int16 temp;
 
 	(void)pdata;
+	dryCnt = 0;
 	temperature = (int16) adcRead();
-	if (temperature < temp_low) {
+	if (temperature < tempLow) {
 		state = AC_OFF;
-		ac_mode(AC_OFF);
+		acMode(AC_OFF);
 	} else {
 		state = AC_DRY;
-		ac_mode(AC_DRY);
-		dry = 0;
-		cool = TRUE;
+		acMode(AC_DRY);
+		dryTime = 0;
+		dryCnt++;
 	}
 	while (1) {
 		temp = (int16) adcRead();
 		temperature += (temp - temperature) / 64;
 		// usart0Printf("%d %d %d\r\n", temperature / TEMP_SCALE, temp / TEMP_SCALE, state);
 		if (state == AC_OFF) {
-			if (temperature > temp_high) {
-				if (cool) {
-					state = AC_COOL;
-					ac_mode(AC_COOL);
-					cool = FALSE;
-				} else {
+			if (temperature > tempHigh) {
+				if (dryCnt % dryPeriod == 0) {
 					state = AC_DRY;
-					ac_mode(AC_DRY);
-					dry = 0;
-					cool = TRUE;
+					acMode(AC_DRY);
+					dryTime = 0;
+				} else {
+					state = AC_COOL;
+					acMode(AC_COOL);
 				}
+				dryCnt++;
 			}
 		} else if (state == AC_DRY) {
-			if (temperature < temp_low) {
+			if (temperature < tempLow) {
 				state = AC_OFF;
-				ac_mode(AC_OFF);
+				acMode(AC_OFF);
 			} else {
-				dry += 1;
-				if (dry >= TIME_DRY) {
+				dryTime++;
+				if (dryTime >= TIME_DRY) {
 					state = AC_COOL;
-					ac_mode(AC_COOL);
+					acMode(AC_COOL);
 				}
 			}
 		} else if (state == AC_COOL) {
-			if (temperature < temp_low) {
+			if (temperature < tempLow) {
 				state = AC_OFF;
-				ac_mode(AC_OFF);
+				acMode(AC_OFF);
 			}
 		}
 		OSTimeDly(1);
 	}
 }
 
-void auto_ac_debug(void *pdata)
+void autoAcInterface(void *pdata)
 {
 	char *str;
 	int16 temp;
@@ -99,21 +100,26 @@ void auto_ac_debug(void *pdata)
 	(void)pdata;
 	while (1) {
 		usart0Read(&str);
-		temp = (str[0] - '0') * 10 + str[1] - '0';
-		temp_high = (temp + 1) * TEMP_SCALE;
-		temp_low = (temp - 1) * TEMP_SCALE;
-		usart0Printf("Temperature set at %d\r\n", temp);
+		if (str[0] == 't') {
+			temp = (str[1] - '0') * 10 + str[2] - '0';
+			tempHigh = (temp + 1) * TEMP_SCALE;
+			tempLow = (temp - 1) * TEMP_SCALE;
+			usart0Printf("Temperature set at %d\r\n", temp);
+		} else if (str[0] == 'd') {
+			dryPeriod = str[1] - '0';
+			usart0Printf("Dry period set at %d\r\n", dryPeriod);
+		}
 	}
 }
 
-static uint8 ac_off[14] = {
+static uint8 acOff[14] = {
 	0x23, 0xCB, 0x26, 0x01,
 	0x00, 0x20, 0x02, 0x07,
 	0x3A, 0x00, 0x00, 0x00,
 	0x00, 0x78
 };
 
-static uint8 ac_dry[14] = {
+static uint8 acDry[14] = {
 	0x23, 0xCB, 0x26, 0x01,
 	0x00, 0x24, 0x02, 0x07,
 	0x3A, 0x00, 0x00, 0x00,
@@ -121,29 +127,29 @@ static uint8 ac_dry[14] = {
 };
 
 /* cool 16 celsius */
-static uint8 ac_cool[14] = {
+static uint8 acCool[14] = {
 	0x23, 0xCB, 0x26, 0x01,
 	0x00, 0x24, 0x03, 0x0F,
 	0x3A, 0x00, 0x00, 0x00,
 	0x00, 0x85
 };
 
-static void ac_mode(uint8 mode)
+static void acMode(uint8 mode)
 {
 	uint8 *code;
 	char *msg;
 
 	if (mode == AC_DRY) {
-		code = ac_dry;
+		code = acDry;
 		msg = "DRY";
 	} else if (mode == AC_COOL) {
-		code = ac_cool;
+		code = acCool;
 		msg = "COOL";
 	} else {
-		code = ac_off;
+		code = acOff;
 		msg = "OFF";
 	}
 	OSTimeDly(1);
-	ir_send(code, 14);
+	irSend(code, 14);
 	usart0Printf("Enter AC %s Mode\r\n", msg);
 }

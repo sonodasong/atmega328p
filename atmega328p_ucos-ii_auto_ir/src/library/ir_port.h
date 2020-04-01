@@ -3,10 +3,10 @@
 
 #include "define.h"
 
-void ir_port_init(void);
-void ir_port_pulse_on(void);
-void ir_port_pulse_off(void);
-void ir_port_on(void);
-void ir_port_off(void);
+void irPortInit(void);
+void irPortPulseOn(void);
+void irPortPulseOff(void);
+void irPortOn(void);
+void irPortOff(void);
 
 #endif

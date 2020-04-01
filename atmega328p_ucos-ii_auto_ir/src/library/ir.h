@@ -5,7 +5,7 @@
 
 #define IR_TIMEOUT		0xFFFFFFFF
 
-void ir_init(void);
-void ir_send(uint8 *buf, uint8 len);
+void irInit(void);
+void irSend(uint8 *buf, uint8 len);
 
 #endif

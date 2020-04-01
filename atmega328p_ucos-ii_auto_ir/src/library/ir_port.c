@@ -1,6 +1,6 @@
 #include "ir_port.h"
 
-void ir_port_init(void)
+void irPortInit(void)
 {
 	/* ir pulse initialization */
 	OCR2A = 51;
@@ -17,35 +17,32 @@ void ir_port_init(void)
 	TIMSK0 = 0x00;
 }
 
-void ledOn(void);
-void ledOff(void);
-
-void ir_port_pulse_on(void)
+void irPortPulseOn(void)
 {
 	TCNT2 = 0;
 	TCCR2B = 0x0A;
 }
 
-void ir_port_pulse_off(void)
+void irPortPulseOff(void)
 {
 	TCCR2B = 0x08;
 }
 
-void ir_port_on(void)
+void irPortOn(void)
 {
 	TCNT0 = 0;
 	TIFR0 = ex(OCF0A);
 	TIMSK0 = ex(OCIE0A);
 }
 
-void ir_port_off(void)
+void irPortOff(void)
 {
 	TIMSK0 = 0x00;
 }
 
-extern void ir_handler(void);
+extern void irHandler(void);
 
 ISR(TIMER0_COMPA_vect)
 {
-	ir_handler();
+	irHandler();
 }

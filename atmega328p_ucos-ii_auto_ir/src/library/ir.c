@@ -1,115 +1,115 @@
 #include "ir_port.h"
 #include "ir.h"
 
-static void ir_header(void);
-static void ir_0(void);
-static void ir_1(void);
-static void ir_end(void);
-static BOOLEAN ir_next(void);
+static void irHeader(void);
+static void ir0(void);
+static void ir1(void);
+static void irEnd(void);
+static BOOLEAN irNext(void);
 
-static uint8 *ir_buf;
-static uint8 ir_len;
-static uint8 ir_byte;
-static uint8 ir_bit;
-static uint8 ir_state;
-static uint8 ir_pulse_on;
-static uint8 ir_pulse_off;
+static uint8 *irBuf;
+static uint8 irLen;
+static uint8 irByte;
+static uint8 irBit;
+static uint8 irState;
+static uint8 irPulseOn;
+static uint8 irPulseOff;
 
-static OS_EVENT *ir_rdy;
+static OS_EVENT *irRdy;
 
-void ir_init(void)
+void irInit(void)
 {
-	ir_port_init();
-	ir_rdy = OSSemCreate(0);
+	irPortInit();
+	irRdy = OSSemCreate(0);
 }
 
-void ir_send(uint8 *buf, uint8 len)
+void irSend(uint8 *buf, uint8 len)
 {
 	INT8U err;
 
-	ir_buf = buf;
-	ir_len = len;
-	ir_byte = 0;
-	ir_bit = 0;
-	ir_port_on();
-	ir_header();
-	OSSemPend(ir_rdy, IR_TIMEOUT, &err);
+	irBuf = buf;
+	irLen = len;
+	irByte = 0;
+	irBit = 0;
+	irPortOn();
+	irHeader();
+	OSSemPend(irRdy, IR_TIMEOUT, &err);
 }
 
-void ir_handler(void)
+void irHandler(void)
 {
-	if (ir_state == 0) {
-		ir_pulse_on -= 1;
-		if (ir_pulse_on == 0) {
-			ir_state = 1;
-			ir_port_pulse_off();
+	if (irState == 0) {
+		irPulseOn -= 1;
+		if (irPulseOn == 0) {
+			irState = 1;
+			irPortPulseOff();
 		}
-	} else if (ir_state == 1) {
-		ir_pulse_off -= 1;
-		if (ir_pulse_off == 0) {
-			if (!ir_next()) {
-				ir_end();
+	} else if (irState == 1) {
+		irPulseOff -= 1;
+		if (irPulseOff == 0) {
+			if (!irNext()) {
+				irEnd();
 			}
 		}
-	} else if (ir_state == 2) {
-		ir_pulse_on -= 1;
-		if (ir_pulse_on == 0) {
-			ir_state = 1;
-			ir_port_pulse_off();
-			ir_port_off();
+	} else if (irState == 2) {
+		irPulseOn -= 1;
+		if (irPulseOn == 0) {
+			irState = 1;
+			irPortPulseOff();
+			irPortOff();
 			OSIntEnter();
-			OSSemPost(ir_rdy);
+			OSSemPost(irRdy);
 			OSIntExit();
 		}
 	}
 }
 
-static void ir_header(void)
+static void irHeader(void)
 {
-	ir_state = 0;
-	ir_port_pulse_on();
-	ir_pulse_on = 8;
-	ir_pulse_off = 4;
+	irState = 0;
+	irPortPulseOn();
+	irPulseOn = 8;
+	irPulseOff = 4;
 }
 
-static void ir_0(void)
+static void ir0(void)
 {
-	ir_state = 0;
-	ir_port_pulse_on();
-	ir_pulse_on = 1;
-	ir_pulse_off = 1;
+	irState = 0;
+	irPortPulseOn();
+	irPulseOn = 1;
+	irPulseOff = 1;
 }
 
-static void ir_1(void)
+static void ir1(void)
 {
-	ir_state = 0;
-	ir_port_pulse_on();
-	ir_pulse_on = 1;
-	ir_pulse_off = 3;
+	irState = 0;
+	irPortPulseOn();
+	irPulseOn = 1;
+	irPulseOff = 3;
 }
 
-static void ir_end(void)
+static void irEnd(void)
 {
-	ir_state = 2;
-	ir_port_pulse_on();
-	ir_pulse_on = 1;
-	ir_pulse_off = 0;
+	irState = 2;
+	irPortPulseOn();
+	irPulseOn = 1;
+	irPulseOff = 0;
 }
 
-static BOOLEAN ir_next(void)
+static BOOLEAN irNext(void)
 {
-	if (ir_byte == ir_len) {
+	if (irByte == irLen) {
 		return FALSE;
 	} else {
-		if (ir_buf[ir_byte] & ex(ir_bit)) {
-			ir_1();
+		if (irBuf[irByte] & ex(irBit)) {
+			ir1();
 		} else {
-			ir_0();
+			ir0();
 		}
-		ir_bit += 1;
-		if (ir_bit == 8) {
-			ir_bit = 0;
-			ir_byte += 1;
+		irBit += 1;
+		if (irBit == 8) {
+			irBit = 0;
+			irByte += 1;
 		}
 		return TRUE;
 	}
